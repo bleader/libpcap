@@ -57,6 +57,7 @@
 #include <stdio.h>	/* for the stderr file */
 #include <stdlib.h>	/* for malloc() and free() */
 #include <limits.h>	/* for INT_MAX */
+#include <netinet/tcp.h>	/* for tcp keepalive flags */
 
 #include "pcap-int.h"
 
@@ -511,6 +512,44 @@ int sock_close(SOCKET sock, char *errbuf, int errbuflen)
 	}
 
 	closesocket(sock);
+	return 0;
+}
+
+/*
+ * \brief Set the keepalive options on the given tcp socket
+ *
+ * This function enable keepalive on the specified socket. It will also set the
+ * various related parameters to be able to tweak the keepalive parameters.
+ * This is mainly useful here to have a fast detection of lost connection
+ * between rpcad and a client.
+ *
+ * \param sock: the socket identifier to enable keepalive on.
+ *
+ * \param keep_idle: how long tcp should wait before starting to send keepalive probes.
+ *
+ * \param keep_cnt: how many probes to send before considering the link is down.
+ *
+ * \param keep_intvl: delay between probes
+ *
+ * \param user_timeout: milliseconds that data can stay unacknowledged before timeout.
+ *
+ * \return '0' if everything is fine, '-1' if some errors occurred. The error message is returned
+ * in the 'errbuf' variable.
+ */
+int sock_enable_keepalive(SOCKET sock, int keep_idle, int keep_cnt, int keep_intvl, int user_timeout)
+{
+	int optval = 1; // enable keepalive
+	socklen_t optlen = sizeof(optval);
+	if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) )
+		return -1;
+	if (setsockopt(sock, SOL_TCP, TCP_KEEPIDLE, &keep_idle, optlen))
+		return -1;
+	if (setsockopt(sock, SOL_TCP, TCP_KEEPCNT, &keep_cnt, optlen))
+		return -1;
+	if (setsockopt(sock, SOL_TCP, TCP_KEEPINTVL, &keep_intvl, optlen))
+		return -1;
+	if (setsockopt(sock, SOL_TCP, TCP_USER_TIMEOUT, &user_timeout, optlen))
+		return -1;
 	return 0;
 }
 

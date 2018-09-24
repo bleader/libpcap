@@ -732,6 +732,37 @@ PCAP_API const char *pcap_lib_version(void);
 #define PCAP_OPENFLAG_MAX_RESPONSIVENESS	0x00000010
 
 /*
+ * Specifies to enable keepalive and user_timeout in order to detect when
+ * loosing connection to rpcapd
+ *
+ * This only apply to tcp connections, and we need both the tcp keepalive
+ * enable, without timout and retries specified, and tcp_user_timeout set. The
+ * keepalive will trigger a FIN, and the timeout will let it wait for the
+ * answer for a shorter time.
+ */
+#define PCAP_OPENFLAG_KEEPALIVE                        0x00000020
+
+/* Default values for keepalive and tiemout
+ *
+ * RPCAP_KEEPALIVE_IDLE
+ * 	Idle seconds before tcp start sending keepalive.
+ *
+ * RPCAP_KEEPALIVE_CNT
+ * 	Number of keepalive probes before dropping connection.
+ *
+ * RPCAP_KEEPALIVE_INTVL
+ * 	Interval in seconds between probes.
+ *
+ * RPCAP_TCP_USER_TIMEOUT
+ * 	Delay in milliseconds that can data stay unacknowledge before tcp drops
+ * 	the connection.
+ */
+#define RPCAP_KEEPALIVE_IDLE	15
+#define RPCAP_KEEPALIVE_CNT	3
+#define RPCAP_KEEPALIVE_INTVL	5
+#define RPCAP_TCP_USER_TIMEOUT  10000
+
+/*
  * Remote authentication methods.
  * These are used in the 'type' member of the pcap_rmtauth structure.
  */

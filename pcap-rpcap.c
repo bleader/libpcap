@@ -1168,6 +1168,8 @@ static int pcap_startcapture_remote(pcap_t *fp)
 		startcapreq->flags |= RPCAP_STARTCAPREQ_FLAG_PROMISC;
 	if (pr->rmt_flags & PCAP_OPENFLAG_DATATX_UDP)
 		startcapreq->flags |= RPCAP_STARTCAPREQ_FLAG_DGRAM;
+	if (pr->rmt_flags & PCAP_OPENFLAG_KEEPALIVE)
+		startcapreq->flags |= PCAP_OPENFLAG_KEEPALIVE;
 	if (active)
 		startcapreq->flags |= RPCAP_STARTCAPREQ_FLAG_SERVEROPEN;
 
@@ -1219,6 +1221,17 @@ static int pcap_startcapture_remote(pcap_t *fp)
 			if ((sockdata = sock_open(addrinfo, SOCKOPEN_CLIENT, 0, fp->errbuf, PCAP_ERRBUF_SIZE)) == INVALID_SOCKET)
 				goto error;
 
+			if (pr->rmt_flags & PCAP_OPENFLAG_KEEPALIVE) {
+				if (sock_enable_keepalive(sockdata,
+							  RPCAP_KEEPALIVE_IDLE,
+							  RPCAP_KEEPALIVE_CNT,
+							  RPCAP_KEEPALIVE_INTVL,
+							  RPCAP_TCP_USER_TIMEOUT)) {
+
+					sock_geterror("sock_enable_keepalive(): ", fp->errbuf, PCAP_ERRBUF_SIZE);
+					goto error;
+				}
+			}
 			/* addrinfo is no longer used */
 			freeaddrinfo(addrinfo);
 			addrinfo = NULL;

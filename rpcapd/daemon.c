@@ -1657,6 +1657,19 @@ daemon_msg_startcap_req(struct daemon_slpars *pars, uint32 plen, struct thread_h
 	{
 		hints.ai_flags = AI_PASSIVE;
 
+		// here we are in active mode, using tcp, set keepalive if needed on control socket
+		if (startcapreq.flags & PCAP_OPENFLAG_KEEPALIVE) {
+			if (sock_enable_keepalive(pars->sockctrl_in,
+						  RPCAP_KEEPALIVE_IDLE,
+						  RPCAP_KEEPALIVE_CNT,
+						  RPCAP_KEEPALIVE_INTVL,
+						  RPCAP_TCP_USER_TIMEOUT)) {
+
+				sock_geterror("sock_enable_keepalive(): ", errmsgbuf, PCAP_ERRBUF_SIZE);
+				goto error;
+			    }
+		}
+
 		// Let's the server socket pick up a free network port for us
 		if (sock_initaddress(NULL, "0", &hints, &addrinfo, errmsgbuf, PCAP_ERRBUF_SIZE) == -1)
 			goto error;
