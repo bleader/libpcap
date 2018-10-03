@@ -392,6 +392,11 @@ SOCKET sock_open(struct addrinfo *addrinfo, int server, int nconn, char *errbuf,
 		}
 #endif /* defined(IPV6_V6ONLY) || defined(IPV6_BINDV6ONLY) */
 
+		/* for server sockets, add reuseaddr flag, don't fail if it cannot be set */
+		int optval = 1;
+		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) < 0)
+			sock_geterror("setsockopt():", errbuf, errbuflen);
+
 		/* WARNING: if the address is a mcast one, I should place the proper Win32 code here */
 		if (bind(sock, addrinfo->ai_addr, (int) addrinfo->ai_addrlen) != 0)
 		{
